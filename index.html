@@ -1,183 +1,475 @@
+
 <!DOCTYPE html>
 <html lang="it">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#111111">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#101010">
 <title>My Planner AI</title>
 <style>
+:root{--bg:#101010;--card:#1c1c1c;--text:#fff;--muted:#aaa;--line:#383838}
 *{box-sizing:border-box}
-body{margin:0;background:#101010;color:#f5f5f5;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
-header{padding:28px 22px 18px;border-bottom:1px solid #303030}
-.logo{font-size:25px;font-weight:800;letter-spacing:-1px}
-.logo span{color:#999}
-.sub{color:#999;font-size:13px;margin-top:6px}
-main{padding:20px;max-width:650px;margin:auto;padding-bottom:100px}
-h2{font-size:21px;margin:10px 0}
-.date{color:#999;font-size:14px;margin-bottom:22px}
-.card{background:#1b1b1b;border:1px solid #303030;border-radius:16px;padding:17px;margin:14px 0}
-.stats{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.stat strong{font-size:26px;display:block;margin-top:8px}
-.stat small,.muted{color:#999}
-button{background:#f2f2f2;color:#111;border:0;border-radius:10px;padding:13px 16px;font-weight:700;font-size:14px;cursor:pointer}
-button.secondary{background:#292929;color:white;border:1px solid #444}
-button.delete{background:#382020;color:#ffaaaa;padding:8px 10px}
-input,textarea,select{width:100%;padding:13px;background:#111;color:white;border:1px solid #444;border-radius:9px;margin:7px 0 14px;font-size:15px}
-label{font-size:13px;color:#bbb}
-form button{width:100%}
-.item{display:flex;justify-content:space-between;align-items:center;gap:10px;border-bottom:1px solid #333;padding:13px 0}
-.item:last-child{border:0}
-.item-title{font-weight:600}
-.item small{display:block;color:#999;margin-top:5px}
-.done .item-title{text-decoration:line-through;color:#777}
-nav{position:fixed;bottom:0;left:0;right:0;background:#181818;border-top:1px solid #333;display:flex;justify-content:space-around;padding:12px 4px calc(12px + env(safe-area-inset-bottom));z-index:5}
-nav button{background:none;color:#aaa;padding:8px 5px;font-size:12px}
-nav button.active{color:white}
-.page{display:none}
-.page.active{display:block}
-.empty{color:#888;text-align:center;padding:22px 5px}
+body{margin:0;padding:0 0 90px;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+header{text-align:center;padding:25px 15px 15px}
+header h1{margin:0;font-size:27px}
+header p{color:var(--muted);font-size:13px}
+main{max-width:760px;margin:auto;padding:0 15px}
+.page{display:none}.page.active{display:block}
+h2{font-size:20px;margin:20px 0 12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:15px;margin:12px 0}
+label{display:block;font-size:13px;margin:10px 0 5px;color:#ddd}
+input,textarea,select{width:100%;padding:13px;border-radius:11px;border:1px solid #444;background:#111;color:white;font-size:16px;margin-bottom:10px}
+textarea{min-height:85px}
+button{border:1px solid #555;border-radius:12px;padding:12px 17px;background:#f2f2f2;color:#111;font-size:14px;font-weight:bold;cursor:pointer}
+button.secondary{background:#292929;color:white}
+button.danger{background:#422222;color:white}
+.actions{display:flex;justify-content:center;align-items:center;gap:10px;flex-wrap:wrap;width:100%;margin-top:10px}
+.actions button{min-width:115px}
+.status{text-align:center;font-size:13px;color:#ddd;margin-top:10px;min-height:18px}
+.muted{color:var(--muted);font-size:13px}
+.item-title{font-weight:bold;margin-bottom:6px;overflow-wrap:anywhere}
+.item-meta{color:var(--muted);font-size:12px;line-height:1.6}
+.empty{text-align:center;color:var(--muted);padding:22px 10px}
+.pill{background:#333;border-radius:20px;padding:5px 10px;font-size:11px;white-space:nowrap}
+.row{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.task-done .item-title{text-decoration:line-through;color:#888}
+nav{position:fixed;bottom:0;left:0;right:0;display:grid;grid-template-columns:repeat(5,1fr);background:#181818;border-top:1px solid #383838;padding:9px 5px calc(9px + env(safe-area-inset-bottom));z-index:10}
+nav button{background:transparent;color:#aaa;border:0;padding:7px 2px;font-size:11px;min-width:0}
+nav button.active{color:white;background:#303030}
+nav span{display:block;font-size:19px;margin-bottom:3px}
+@media(min-width:600px){.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}}
 </style>
 </head>
 <body>
+
 <header>
- <div class="logo">MY PLANNER <span>AI</span></div>
- <div class="sub">Il tuo assistente personale</div>
+<h1>My Planner AI</h1>
+<p>Il tuo assistente personale</p>
 </header>
+
 <main>
+
 <section id="home" class="page active">
- <h2>Buongiorno 👋</h2>
- <div class="date" id="today"></div>
- <div class="stats">
-  <div class="card stat"><small>Appuntamenti</small><strong id="eventCount">0</strong></div>
-  <div class="card stat"><small>Attività da fare</small><strong id="taskCount">0</strong></div>
- </div>
- <div class="card">
-  <h2>La tua giornata</h2>
-  <div id="todayEvents" class="empty">Nessun appuntamento oggi.</div>
- </div>
- <div class="card">
-  <h2>Le tue attività</h2>
-  <div id="todayTasks" class="empty">Nessuna attività da completare.</div>
- </div>
- <button onclick="showPage('add')">+ Nuovo appuntamento</button>
+<div class="row">
+<h2>La tua giornata</h2>
+<span id="todayLabel" class="pill"></span>
+</div>
+<div id="homeEvents"></div>
+<h2>Attività da completare</h2>
+<div id="homeTasks"></div>
+</section>
+
+<section id="agenda" class="page">
+<h2>Nuovo appuntamento</h2>
+<form id="eventForm" class="card">
+<label>Titolo</label>
+<input id="eventTitle" required maxlength="100" placeholder="Es. Riunione di lavoro">
+<div class="two">
+<div><label>Data</label><input id="eventDate" type="date" required></div>
+<div><label>Ora</label><input id="eventTime" type="time"></div>
+</div>
+<label>Luogo</label>
+<input id="eventPlace" placeholder="Luogo dell'appuntamento">
+<label>Note</label>
+<textarea id="eventNotes" placeholder="Dettagli facoltativi"></textarea>
+<div class="actions"><button type="submit">Salva appuntamento</button></div>
+<div id="eventStatus" class="status"></div>
+</form>
+<h2>Tutti gli appuntamenti</h2>
+<div class="card">
+<label>Filtra appuntamenti</label>
+<select id="eventFilter">
+<option value="all">Tutti</option>
+<option value="upcoming">Da oggi in poi</option>
+<option value="past">Passati</option>
+</select>
+</div>
+<div id="agendaEvents"></div>
 </section>
 
 <section id="calendar" class="page">
- <h2>Calendario</h2>
- <div class="card">
-  <label>Seleziona un giorno</label>
-  <input type="date" id="filterDate" onchange="render()">
-  <div id="calendarEvents"></div>
- </div>
- <button onclick="showPage('add')">+ Aggiungi appuntamento</button>
+<h2>Calendario</h2>
+<div class="card">
+<label>Seleziona un giorno</label>
+<input id="calendarDate" type="date">
+<div id="calendarResults"></div>
+</div>
 </section>
 
-<section id="tasks" class="page">
- <h2>Le mie attività</h2>
- <div class="card">
-  <form id="taskForm">
-   <label>Nuova attività</label>
-   <input id="taskName" placeholder="Es. Chiamare il commercialista" required>
-   <label>Scadenza</label>
-   <input id="taskDate" type="date">
-   <button type="submit">Aggiungi attività</button>
-  </form>
- </div>
- <div class="card"><div id="allTasks" class="empty">Nessuna attività.</div></div>
+<section id="activities" class="page">
+<h2>Nuova attività</h2>
+<form id="taskForm" class="card">
+<label>Attività da svolgere</label>
+<input id="taskTitle" required maxlength="100" placeholder="Es. Preparare una riunione">
+<div class="two">
+<div>
+<label>Scadenza</label>
+<input id="taskDate" type="date">
+</div>
+<div>
+<label>Priorità</label>
+<select id="taskPriority">
+<option>Normale</option>
+<option>Alta</option>
+<option>Bassa</option>
+</select>
+</div>
+</div>
+<div class="actions"><button type="submit">Salva attività</button></div>
+<div id="taskStatus" class="status"></div>
+</form>
+<h2>La tua lista</h2>
+<div id="taskList"></div>
 </section>
-
-<section id="add" class="page">
- <h2>Nuovo appuntamento</h2>
- <div class="card">
-  <form id="eventForm">
-   <label>Titolo</label>
-   <input id="eventName" placeholder="Es. Riunione di lavoro" required>
-   <label>Data</label>
-   <input id="eventDate" type="date" required>
-   <label>Ora</label>
-   <input id="eventTime" type="time" required>
-   <label>Note</label>
-   <textarea id="eventNotes" rows="3" placeholder="Aggiungi dettagli..."></textarea>
-   <button type="submit">Salva appuntamento</button>
-  </form>
- </div>
- </section>
 
 <section id="assistant" class="page">
- <h2>Assistente AI</h2>
- <div class="card">
-  <p>Benvenuto! Sono il tuo assistente organizzativo.</p>
-  <p class="muted">Questa prima versione non è ancora collegata a un servizio di intelligenza artificiale. Puoi iniziare organizzando appuntamenti e attività nelle altre sezioni.</p>
-  <button onclick="showPage('add')">Crea un appuntamento</button>
-  <button class="secondary" onclick="showPage('tasks')">Gestisci attività</button>
- </div>
+<h2>Assistente AI</h2>
+<div class="card">
+<p class="muted">Scrivi un appuntamento in linguaggio naturale. Potrai controllare i dati prima di salvarlo.</p>
+<label>Il tuo messaggio</label>
+<textarea id="assistantText" placeholder="Es. Riunione domani alle 15"></textarea>
+<div class="actions"><button type="button" id="parseText">Prepara appuntamento</button></div>
+<div id="assistantStatus" class="status"></div>
+</div>
+<div class="card">
+<strong>Promemoria e notifiche</strong>
+<p class="muted">Le notifiche automatiche e l'intelligenza artificiale online saranno integrate in un aggiornamento successivo.</p>
+</div>
 </section>
+
 </main>
 
 <nav>
- <button class="active" onclick="showPage('home',this)">⌂<br>Home</button>
- <button onclick="showPage('calendar',this)">▦<br>Calendario</button>
- <button onclick="showPage('tasks',this)">✓<br>Attività</button>
- <button onclick="showPage('assistant',this)">✧<br>Assistente</button>
+<button class="active" data-page="home"><span>⌂</span>Home</button>
+<button data-page="agenda"><span>＋</span>Agenda</button>
+<button data-page="calendar"><span>▦</span>Calendario</button>
+<button data-page="activities"><span>✓</span>Attività</button>
+<button data-page="assistant"><span>✦</span>Assistente</button>
 </nav>
 
 <script>
-let events=JSON.parse(localStorage.getItem('mp_events')||'[]');
-let tasks=JSON.parse(localStorage.getItem('mp_tasks')||'[]');
-const today=new Date().toLocaleDateString('it-IT',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
-document.getElementById('today').textContent=today;
-const iso=()=>new Date().toISOString().slice(0,10);
-document.getElementById('eventDate').value=iso();
-document.getElementById('taskDate').value=iso();
-document.getElementById('filterDate').value=iso();
+"use strict";
 
-function save(){
- localStorage.setItem('mp_events',JSON.stringify(events));
- localStorage.setItem('mp_tasks',JSON.stringify(tasks));
- render();
+const EVENTS_KEY="myPlannerAI_events_v3";
+const TASKS_KEY="myPlannerAI_tasks_v3";
+
+function loadData(key,oldKeys){
+  try{
+    let value=localStorage.getItem(key);
+    if(value!==null){
+      const parsed=JSON.parse(value);
+      return Array.isArray(parsed)?parsed:[];
+    }
+    for(const oldKey of oldKeys){
+      value=localStorage.getItem(oldKey);
+      if(value!==null){
+        const parsed=JSON.parse(value);
+        if(Array.isArray(parsed)){
+          localStorage.setItem(key,JSON.stringify(parsed));
+          return parsed;
+        }
+      }
+    }
+  }catch(error){console.error(error);}
+  return [];
 }
-function showPage(id,btn){
- document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
- document.getElementById(id).classList.add('active');
- document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
- if(btn)btn.classList.add('active');
- else document.querySelectorAll('nav button')[['home','calendar','tasks','assistant'].indexOf(id)]?.classList.add('active');
- render();
+
+let events=loadData(EVENTS_KEY,["myPlannerAI_events_v2","myPlannerAI_events","events"]);
+let tasks=loadData(TASKS_KEY,["myPlannerAI_tasks_v2","myPlannerAI_tasks","tasks"]);
+
+function saveData(){
+  try{
+    localStorage.setItem(EVENTS_KEY,JSON.stringify(events));
+    localStorage.setItem(TASKS_KEY,JSON.stringify(tasks));
+    return true;
+  }catch(error){
+    alert("Errore durante il salvataggio. Controlla lo spazio disponibile nel browser.");
+    return false;
+  }
 }
-document.getElementById('eventForm').addEventListener('submit',e=>{
- e.preventDefault();
- events.push({id:Date.now(),name:eventName.value,date:eventDate.value,time:eventTime.value,notes:eventNotes.value});
- e.target.reset();eventDate.value=iso();save();showPage('calendar');
+
+function makeId(){
+  return window.crypto&&crypto.randomUUID
+    ?crypto.randomUUID()
+    :"id-"+Date.now()+"-"+Math.random().toString(16).slice(2);
+}
+
+function todayString(){
+  const d=new Date();
+  return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+}
+
+function dateLabel(value){
+  if(!value)return "Data non indicata";
+  const p=value.split("-").map(Number);
+  if(p.length!==3)return value;
+  return new Date(p[0],p[1]-1,p[2]).toLocaleDateString("it-IT",{
+    weekday:"short",day:"2-digit",month:"long",year:"numeric"
+  });
+}
+
+function escapeHTML(value){
+  return String(value??"").replace(/[&<>"']/g,function(c){
+    return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];
+  });
+}
+
+function showPage(id){
+  document.querySelectorAll(".page").forEach(function(page){
+    page.classList.toggle("active",page.id===id);
+  });
+  document.querySelectorAll("nav button").forEach(function(button){
+    button.classList.toggle("active",button.dataset.page===id);
+  });
+  renderAll();
+}
+
+document.querySelectorAll("nav button").forEach(function(button){
+  button.addEventListener("click",function(){
+    showPage(button.dataset.page);
+  });
 });
-document.getElementById('taskForm').addEventListener('submit',e=>{
- e.preventDefault();
- tasks.push({id:Date.now(),name:taskName.value,date:taskDate.value,done:false});
- e.target.reset();taskDate.value=iso();save();
+
+function sortedEvents(list){
+  return [...list].sort(function(a,b){
+    return (a.date||"").localeCompare(b.date||"")||
+      (a.time||"").localeCompare(b.time||"");
+  });
+}
+
+function eventCard(event){
+  return `
+  <article class="card">
+    <div class="row">
+      <div class="item-title">${escapeHTML(event.title)}</div>
+      <span class="pill">${escapeHTML(event.time||"Ora da definire")}</span>
+    </div>
+    <div class="item-meta">
+      ${dateLabel(event.date)}
+      ${event.place?" · "+escapeHTML(event.place):""}
+    </div>
+    ${event.notes?`<p class="muted">${escapeHTML(event.notes)}</p>`:""}
+    <div class="actions">
+      <button class="secondary" data-delete-event="${escapeHTML(event.id)}">Elimina</button>
+    </div>
+  </article>`;
+}
+
+function taskCard(task){
+  return `
+  <article class="card ${task.done?"task-done":""}">
+    <div class="row">
+      <div class="item-title">${escapeHTML(task.title)}</div>
+      <span class="pill">${escapeHTML(task.priority||"Normale")}</span>
+    </div>
+    <div class="item-meta">
+      ${task.date?"Scadenza: "+dateLabel(task.date):"Nessuna scadenza"}
+    </div>
+    <div class="actions">
+      <button class="secondary" data-toggle-task="${escapeHTML(task.id)}">
+        ${task.done?"Segna da fare":"Completa"}
+      </button>
+      <button class="danger" data-delete-task="${escapeHTML(task.id)}">Elimina</button>
+    </div>
+  </article>`;
+}
+
+function renderHome(){
+  document.getElementById("todayLabel").textContent=dateLabel(todayString());
+  const todayEvents=sortedEvents(events.filter(e=>e.date===todayString()));
+  document.getElementById("homeEvents").innerHTML=
+    todayEvents.length?todayEvents.map(eventCard).join(""):
+    '<div class="card empty">Nessun appuntamento per oggi.</div>';
+
+  const pending=tasks.filter(t=>!t.done);
+  document.getElementById("homeTasks").innerHTML=
+    pending.length?pending.slice(0,5).map(taskCard).join(""):
+    '<div class="card empty">Non hai attività in sospeso.</div>';
+}
+
+function renderAgenda(){
+  const filter=document.getElementById("eventFilter").value;
+  let list=sortedEvents(events);
+  if(filter==="upcoming")list=list.filter(e=>e.date>=todayString());
+  if(filter==="past")list=list.filter(e=>e.date<todayString());
+
+  document.getElementById("agendaEvents").innerHTML=
+    list.length?list.map(eventCard).join(""):
+    '<div class="card empty">Nessun appuntamento da mostrare.</div>';
+}
+
+function renderCalendar(){
+  const selected=document.getElementById("calendarDate").value||todayString();
+  const list=sortedEvents(events.filter(e=>e.date===selected));
+
+  document.getElementById("calendarResults").innerHTML=
+    "<h3>"+dateLabel(selected)+"</h3>"+
+    (list.length?list.map(eventCard).join(""):
+    '<div class="empty">Nessun appuntamento in questa data.</div>');
+}
+
+function renderTasks(){
+  const list=[...tasks].sort(function(a,b){
+    return Number(a.done)-Number(b.done)||
+      (a.date||"9999").localeCompare(b.date||"9999");
+  });
+
+  document.getElementById("taskList").innerHTML=
+    list.length?list.map(taskCard).join(""):
+    '<div class="card empty">La lista è vuota.</div>';
+}
+
+function renderAll(){
+  renderHome();
+  renderAgenda();
+  renderCalendar();
+  renderTasks();
+}
+
+document.getElementById("eventForm").addEventListener("submit",function(e){
+  e.preventDefault();
+
+  const title=document.getElementById("eventTitle").value.trim();
+  const date=document.getElementById("eventDate").value;
+
+  if(!title||!date){
+    document.getElementById("eventStatus").textContent="Inserisci titolo e data.";
+    return;
+  }
+
+  const entry={
+    id:makeId(),
+    title:title,
+    date:date,
+    time:document.getElementById("eventTime").value,
+    place:document.getElementById("eventPlace").value.trim(),
+    notes:document.getElementById("eventNotes").value.trim(),
+    createdAt:new Date().toISOString()
+  };
+
+  events.push(entry);
+
+  if(!saveData()){
+    events=events.filter(e=>e.id!==entry.id);
+    return;
+  }
+
+  this.reset();
+  document.getElementById("eventDate").value=todayString();
+  document.getElementById("eventStatus").textContent="Appuntamento salvato correttamente.";
+  renderAll();
 });
-function removeEvent(id){events=events.filter(x=>x.id!==id);save()}
-function removeTask(id){tasks=tasks.filter(x=>x.id!==id);save()}
-function toggleTask(id){tasks=tasks.map(x=>x.id===id?{...x,done:!x.done}:x);save()}
-function eventHTML(x){
- return `<div class="item"><div><div class="item-title">${esc(x.name)}</div><small>${x.date} · ${x.time}${x.notes?' · '+esc(x.notes):''}</small></div><button class="delete" onclick="removeEvent(${x.id})">Elimina</button></div>`;
-}
-function taskHTML(x){
- return `<div class="item ${x.done?'done':''}"><div><div class="item-title">${esc(x.name)}</div><small>${x.date||'Senza scadenza'}</small></div><div><button class="secondary" onclick="toggleTask(${x.id})">${x.done?'Ripristina':'Fatto'}</button> <button class="delete" onclick="removeTask(${x.id})">×</button></div></div>`;
-}
-function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-function render(){
- const d=iso();
- document.getElementById('eventCount').textContent=events.filter(x=>x.date===d).length;
- document.getElementById('taskCount').textContent=tasks.filter(x=>!x.done).length;
- const ev=events.filter(x=>x.date===d).sort((a,b)=>a.time.localeCompare(b.time));
- const tt=tasks.filter(x=>!x.done);
- document.getElementById('todayEvents').innerHTML=ev.length?ev.map(eventHTML).join(''):'Nessun appuntamento oggi.';
- document.getElementById('todayTasks').innerHTML=tt.length?tt.map(taskHTML).join(''):'Nessuna attività da completare.';
- document.getElementById('allTasks').innerHTML=tasks.length?tasks.map(taskHTML).join(''):'Nessuna attività.';
- const fd=document.getElementById('filterDate').value||d;
- const fe=events.filter(x=>x.date===fd).sort((a,b)=>a.time.localeCompare(b.time));
- document.getElementById('calendarEvents').innerHTML=fe.length?fe.map(eventHTML).join(''):'<div class="empty">Nessun appuntamento per questo giorno.</div>';
-}
-render();
+
+document.getElementById("taskForm").addEventListener("submit",function(e){
+  e.preventDefault();
+
+  const title=document.getElementById("taskTitle").value.trim();
+  if(!title){
+    document.getElementById("taskStatus").textContent="Inserisci il nome dell'attività.";
+    return;
+  }
+
+  const entry={
+    id:makeId(),
+    title:title,
+    date:document.getElementById("taskDate").value,
+    priority:document.getElementById("taskPriority").value,
+    done:false,
+    createdAt:new Date().toISOString()
+  };
+
+  tasks.push(entry);
+
+  if(!saveData()){
+    tasks=tasks.filter(t=>t.id!==entry.id);
+    return;
+  }
+
+  this.reset();
+  document.getElementById("taskPriority").value="Normale";
+  document.getElementById("taskStatus").textContent="Attività salvata correttamente.";
+  renderAll();
+});
+
+document.getElementById("eventFilter").addEventListener("change",renderAgenda);
+document.getElementById("calendarDate").addEventListener("change",renderCalendar);
+
+document.addEventListener("click",function(e){
+  const deleteEvent=e.target.closest("[data-delete-event]");
+  if(deleteEvent){
+    const id=deleteEvent.dataset.deleteEvent;
+    if(confirm("Vuoi eliminare questo appuntamento?")){
+      const old=events;
+      events=events.filter(x=>x.id!==id);
+      if(!saveData())events=old;
+      renderAll();
+    }
+  }
+
+  const toggleTask=e.target.closest("[data-toggle-task]");
+  if(toggleTask){
+    const item=tasks.find(x=>x.id===toggleTask.dataset.toggleTask);
+    if(item){
+      item.done=!item.done;
+      saveData();
+      renderAll();
+    }
+  }
+
+  const deleteTask=e.target.closest("[data-delete-task]");
+  if(deleteTask&&confirm("Vuoi eliminare questa attività?")){
+    const old=tasks;
+    tasks=tasks.filter(x=>x.id!==deleteTask.dataset.deleteTask);
+    if(!saveData())tasks=old;
+    renderAll();
+  }
+});
+
+document.getElementById("parseText").addEventListener("click",function(){
+  const raw=document.getElementById("assistantText").value.trim();
+  const status=document.getElementById("assistantStatus");
+
+  if(!raw){
+    status.textContent="Scrivi prima il tuo appuntamento.";
+    return;
+  }
+
+  let date=todayString();
+  let time="";
+  const lower=raw.toLowerCase();
+
+  if(lower.includes("dopodomani")){
+    const d=new Date();
+    d.setDate(d.getDate()+2);
+    date=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+  }else if(lower.includes("domani")){
+    const d=new Date();
+    d.setDate(d.getDate()+1);
+    date=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+  }
+
+  const match=lower.match(/\b(?:alle|ore)\s*(\d{1,2})(?::(\d{2}))?\b/);
+  if(match){
+    time=String(match[1]).padStart(2,"0")+":"+(match[2]||"00");
+  }
+
+  const title=raw
+    .replace(/\b(dopodomani|domani)\b/ig,"")
+    .replace(/\b(?:alle|ore)\s*\d{1,2}(?::\d{2})?\b/ig,"")
+    .trim();
+
+  document.getElementById("eventTitle").value=title||raw;
+  document.getElementById("eventDate").value=date;
+  document.getElementById("eventTime").value=time;
+
+  status.textContent="Controlla i dati e premi Salva appuntamento.";
+  showPage("agenda");
+});
+
+document.getElementById("eventDate").value=todayString();
+document.getElementById("calendarDate").value=todayString();
+
+renderAll();
 </script>
 </body>
 </html>
