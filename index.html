@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#111111">
+<title>My Planner AI</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#101010;color:#f5f5f5;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+header{padding:28px 22px 18px;border-bottom:1px solid #303030}
+.logo{font-size:25px;font-weight:800;letter-spacing:-1px}
+.logo span{color:#999}
+.sub{color:#999;font-size:13px;margin-top:6px}
+main{padding:20px;max-width:650px;margin:auto;padding-bottom:100px}
+h2{font-size:21px;margin:10px 0}
+.date{color:#999;font-size:14px;margin-bottom:22px}
+.card{background:#1b1b1b;border:1px solid #303030;border-radius:16px;padding:17px;margin:14px 0}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.stat strong{font-size:26px;display:block;margin-top:8px}
+.stat small,.muted{color:#999}
+button{background:#f2f2f2;color:#111;border:0;border-radius:10px;padding:13px 16px;font-weight:700;font-size:14px;cursor:pointer}
+button.secondary{background:#292929;color:white;border:1px solid #444}
+button.delete{background:#382020;color:#ffaaaa;padding:8px 10px}
+input,textarea,select{width:100%;padding:13px;background:#111;color:white;border:1px solid #444;border-radius:9px;margin:7px 0 14px;font-size:15px}
+label{font-size:13px;color:#bbb}
+form button{width:100%}
+.item{display:flex;justify-content:space-between;align-items:center;gap:10px;border-bottom:1px solid #333;padding:13px 0}
+.item:last-child{border:0}
+.item-title{font-weight:600}
+.item small{display:block;color:#999;margin-top:5px}
+.done .item-title{text-decoration:line-through;color:#777}
+nav{position:fixed;bottom:0;left:0;right:0;background:#181818;border-top:1px solid #333;display:flex;justify-content:space-around;padding:12px 4px calc(12px + env(safe-area-inset-bottom));z-index:5}
+nav button{background:none;color:#aaa;padding:8px 5px;font-size:12px}
+nav button.active{color:white}
+.page{display:none}
+.page.active{display:block}
+.empty{color:#888;text-align:center;padding:22px 5px}
+</style>
+</head>
+<body>
+<header>
+ <div class="logo">MY PLANNER <span>AI</span></div>
+ <div class="sub">Il tuo assistente personale</div>
+</header>
+<main>
+<section id="home" class="page active">
+ <h2>Buongiorno 👋</h2>
+ <div class="date" id="today"></div>
+ <div class="stats">
+  <div class="card stat"><small>Appuntamenti</small><strong id="eventCount">0</strong></div>
+  <div class="card stat"><small>Attività da fare</small><strong id="taskCount">0</strong></div>
+ </div>
+ <div class="card">
+  <h2>La tua giornata</h2>
+  <div id="todayEvents" class="empty">Nessun appuntamento oggi.</div>
+ </div>
+ <div class="card">
+  <h2>Le tue attività</h2>
+  <div id="todayTasks" class="empty">Nessuna attività da completare.</div>
+ </div>
+ <button onclick="showPage('add')">+ Nuovo appuntamento</button>
+</section>
+
+<section id="calendar" class="page">
+ <h2>Calendario</h2>
+ <div class="card">
+  <label>Seleziona un giorno</label>
+  <input type="date" id="filterDate" onchange="render()">
+  <div id="calendarEvents"></div>
+ </div>
+ <button onclick="showPage('add')">+ Aggiungi appuntamento</button>
+</section>
+
+<section id="tasks" class="page">
+ <h2>Le mie attività</h2>
+ <div class="card">
+  <form id="taskForm">
+   <label>Nuova attività</label>
+   <input id="taskName" placeholder="Es. Chiamare il commercialista" required>
+   <label>Scadenza</label>
+   <input id="taskDate" type="date">
+   <button type="submit">Aggiungi attività</button>
+  </form>
+ </div>
+ <div class="card"><div id="allTasks" class="empty">Nessuna attività.</div></div>
+</section>
+
+<section id="add" class="page">
+ <h2>Nuovo appuntamento</h2>
+ <div class="card">
+  <form id="eventForm">
+   <label>Titolo</label>
+   <input id="eventName" placeholder="Es. Riunione di lavoro" required>
+   <label>Data</label>
+   <input id="eventDate" type="date" required>
+   <label>Ora</label>
+   <input id="eventTime" type="time" required>
+   <label>Note</label>
+   <textarea id="eventNotes" rows="3" placeholder="Aggiungi dettagli..."></textarea>
+   <button type="submit">Salva appuntamento</button>
+  </form>
+ </div>
+ </section>
+
+<section id="assistant" class="page">
+ <h2>Assistente AI</h2>
+ <div class="card">
+  <p>Benvenuto! Sono il tuo assistente organizzativo.</p>
+  <p class="muted">Questa prima versione non è ancora collegata a un servizio di intelligenza artificiale. Puoi iniziare organizzando appuntamenti e attività nelle altre sezioni.</p>
+  <button onclick="showPage('add')">Crea un appuntamento</button>
+  <button class="secondary" onclick="showPage('tasks')">Gestisci attività</button>
+ </div>
+</section>
+</main>
+
+<nav>
+ <button class="active" onclick="showPage('home',this)">⌂<br>Home</button>
+ <button onclick="showPage('calendar',this)">▦<br>Calendario</button>
+ <button onclick="showPage('tasks',this)">✓<br>Attività</button>
+ <button onclick="showPage('assistant',this)">✧<br>Assistente</button>
+</nav>
+
+<script>
+let events=JSON.parse(localStorage.getItem('mp_events')||'[]');
+let tasks=JSON.parse(localStorage.getItem('mp_tasks')||'[]');
+const today=new Date().toLocaleDateString('it-IT',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+document.getElementById('today').textContent=today;
+const iso=()=>new Date().toISOString().slice(0,10);
+document.getElementById('eventDate').value=iso();
+document.getElementById('taskDate').value=iso();
+document.getElementById('filterDate').value=iso();
+
+function save(){
+ localStorage.setItem('mp_events',JSON.stringify(events));
+ localStorage.setItem('mp_tasks',JSON.stringify(tasks));
+ render();
+}
+function showPage(id,btn){
+ document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+ document.getElementById(id).classList.add('active');
+ document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
+ if(btn)btn.classList.add('active');
+ else document.querySelectorAll('nav button')[['home','calendar','tasks','assistant'].indexOf(id)]?.classList.add('active');
+ render();
+}
+document.getElementById('eventForm').addEventListener('submit',e=>{
+ e.preventDefault();
+ events.push({id:Date.now(),name:eventName.value,date:eventDate.value,time:eventTime.value,notes:eventNotes.value});
+ e.target.reset();eventDate.value=iso();save();showPage('calendar');
+});
+document.getElementById('taskForm').addEventListener('submit',e=>{
+ e.preventDefault();
+ tasks.push({id:Date.now(),name:taskName.value,date:taskDate.value,done:false});
+ e.target.reset();taskDate.value=iso();save();
+});
+function removeEvent(id){events=events.filter(x=>x.id!==id);save()}
+function removeTask(id){tasks=tasks.filter(x=>x.id!==id);save()}
+function toggleTask(id){tasks=tasks.map(x=>x.id===id?{...x,done:!x.done}:x);save()}
+function eventHTML(x){
+ return `<div class="item"><div><div class="item-title">${esc(x.name)}</div><small>${x.date} · ${x.time}${x.notes?' · '+esc(x.notes):''}</small></div><button class="delete" onclick="removeEvent(${x.id})">Elimina</button></div>`;
+}
+function taskHTML(x){
+ return `<div class="item ${x.done?'done':''}"><div><div class="item-title">${esc(x.name)}</div><small>${x.date||'Senza scadenza'}</small></div><div><button class="secondary" onclick="toggleTask(${x.id})">${x.done?'Ripristina':'Fatto'}</button> <button class="delete" onclick="removeTask(${x.id})">×</button></div></div>`;
+}
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function render(){
+ const d=iso();
+ document.getElementById('eventCount').textContent=events.filter(x=>x.date===d).length;
+ document.getElementById('taskCount').textContent=tasks.filter(x=>!x.done).length;
+ const ev=events.filter(x=>x.date===d).sort((a,b)=>a.time.localeCompare(b.time));
+ const tt=tasks.filter(x=>!x.done);
+ document.getElementById('todayEvents').innerHTML=ev.length?ev.map(eventHTML).join(''):'Nessun appuntamento oggi.';
+ document.getElementById('todayTasks').innerHTML=tt.length?tt.map(taskHTML).join(''):'Nessuna attività da completare.';
+ document.getElementById('allTasks').innerHTML=tasks.length?tasks.map(taskHTML).join(''):'Nessuna attività.';
+ const fd=document.getElementById('filterDate').value||d;
+ const fe=events.filter(x=>x.date===fd).sort((a,b)=>a.time.localeCompare(b.time));
+ document.getElementById('calendarEvents').innerHTML=fe.length?fe.map(eventHTML).join(''):'<div class="empty">Nessun appuntamento per questo giorno.</div>';
+}
+render();
+</script>
+</body>
+</html>
